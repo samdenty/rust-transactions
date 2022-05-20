@@ -115,6 +115,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
   }
 
-  println!("{:?}", clients);
+  let mut wtr = csv::Writer::from_writer(std::io::stdout());
+
+  wtr.write_record(&["client", "available", "held", "total", "chargeback"])?;
+
+  for (client_id, client) in clients {
+    wtr.write_record(&[
+      client_id.to_string(),
+      client.available.to_string(),
+      client.held.to_string(),
+      client.total.to_string(),
+      client.locked.to_string(),
+    ])?;
+  }
+
+  wtr.flush()?;
+
   Ok(())
 }
