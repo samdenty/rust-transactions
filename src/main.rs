@@ -4,7 +4,9 @@ mod transaction;
 use client::Client;
 use rust_decimal_macros::dec;
 use std::error::Error;
-use std::{collections::HashMap, env};
+use std::io::BufWriter;
+use std::{collections::HashMap, env, io::Write};
+use tabwriter::TabWriter;
 use transaction::{Transaction, TransactionType};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -115,21 +117,28 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
   }
 
-  let mut wtr = csv::Writer::from_writer(std::io::stdout());
+  // write CSV to stdout, with pretty printing
+  let mut tw = TabWriter::new(std::io::stdout());
+  let mut buf = BufWriter::new(Vec::new());
 
-  wtr.write_record(&["client", "available", "held", "total", "chargeback"])?;
-
-  for (client_id, client) in clients {
-    wtr.write_record(&[
-      client_id.to_string(),
-      client.available.to_string(),
-      client.held.to_string(),
-      client.total.to_string(),
-      client.locked.to_string(),
-    ])?;
+  {
+    let mut wtr = csv::Writer::from_writer(&mut buf);
+    wtr.write_record(&["client", "available", "held", "total", "chargeback"])?;
+    for (client_id, client) in clients {
+      wtr.write_record(&[
+        client_id.to_string(),
+        client.available.to_string(),
+        client.held.to_string(),
+        client.total.to_string(),
+        client.locked.to_string(),
+      ])?;
+    }
+    wtr.flush()?;
   }
 
-  wtr.flush()?;
+  let csv = String::from_utf8(buf.into_inner()?)?.replace(",", ",\t");
+  tw.write_all(csv.as_bytes())?;
+  tw.flush()?;
 
   Ok(())
 }
