@@ -118,27 +118,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // write CSV to stdout, with pretty printing
-    let mut tw = TabWriter::new(std::io::stdout());
-    let mut buf = BufWriter::new(Vec::new());
 
-    {
-        let mut wtr = csv::Writer::from_writer(&mut buf);
-        wtr.write_record(&["client", "available", "held", "total", "chargeback"])?;
-        for (client_id, client) in clients {
-            wtr.write_record(&[
-                client_id.to_string(),
-                client.available.to_string(),
-                client.held.to_string(),
-                client.total.to_string(),
-                client.locked.to_string(),
-            ])?;
-        }
-        wtr.flush()?;
+    let mut wtr = csv::Writer::from_writer(std::io::stdout());
+    wtr.write_record(&["client", "available", "held", "total", "chargeback"])?;
+    for (client_id, client) in clients {
+        wtr.write_record(&[
+            client_id.to_string(),
+            client.available.to_string(),
+            client.held.to_string(),
+            client.total.to_string(),
+            client.locked.to_string(),
+        ])?;
     }
-
-    let csv = String::from_utf8(buf.into_inner()?)?.replace(",", ",\t");
-    tw.write_all(csv.as_bytes())?;
-    tw.flush()?;
+    wtr.flush()?;
 
     Ok(())
 }
